@@ -1,0 +1,92 @@
+{
+  "entities": {
+    "Farmer": {
+      "title": "Farmer Profile",
+      "description": "Details about the farmer and their preferences.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "location": { "type": "string" },
+        "language": { "type": "string" },
+        "risk_appetite": { "type": "string", "enum": ["low", "medium", "high"] },
+        "budget": { "type": "number" },
+        "land_details": {
+          "type": "object",
+          "properties": {
+            "size_acres": { "type": "number" },
+            "soil_type": { "type": "string" },
+            "water_availability": { "type": "string", "enum": ["low", "medium", "high"] }
+          }
+        },
+        "preferences": {
+          "type": "object",
+          "properties": {
+            "include_livestock": { "type": "boolean" },
+            "interested_crops": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      },
+      "required": ["uid", "name", "location", "budget"]
+    },
+    "Plan": {
+      "title": "Farming Plan",
+      "description": "A generated farming plan for a farmer.",
+      "type": "object",
+      "properties": {
+        "farmer_uid": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "allocation": { "type": "array", "items": { "type": "object" } },
+        "revenue_timeline": { "type": "array", "items": { "type": "object" } },
+        "total_income": { "type": "number" },
+        "total_investment": { "type": "number" },
+        "roi": { "type": "number" },
+        "loan_eligibility": { "type": "number" },
+        "schemes": { "type": "array", "items": { "type": "object" } },
+        "report_url": { "type": "string" },
+        "land_zones": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "color": { "type": "string" },
+              "description": { "type": "string" },
+              "soil_health": { "type": "string" },
+              "moisture_level": { "type": "string" },
+              "soil_health_score": { "type": "number" }
+            }
+          }
+        }
+      },
+      "required": ["farmer_uid", "timestamp", "total_income"]
+    },
+    "Crop": {
+      "title": "Crop Recommendation",
+      "description": "Details about a specific crop.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "yield_time_months": { "type": "number" },
+        "roi_level": { "type": "string" },
+        "water_requirement": { "type": "string" }
+      }
+    },
+    "Scheme": {
+      "title": "Government Scheme",
+      "description": "Details about a government subsidy or scheme.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "subsidy_amount": { "type": "number" },
+        "eligibility": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "farmers": { "schema": "Farmer", "description": "Collection of farmer profiles." },
+    "plans": { "schema": "Plan", "description": "Collection of generated farming plans." },
+    "crops": { "schema": "Crop", "description": "Reference collection for crops." },
+    "schemes": { "schema": "Scheme", "description": "Reference collection for government schemes." }
+  }
+}

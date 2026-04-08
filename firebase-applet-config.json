@@ -1,0 +1,10 @@
+{
+  "projectId": "gramai-advisor",
+  "appId": "1:231604223102:web:e3b9b4715cb999bbb12c2f",
+  "apiKey": "AIzaSyB9GUfhdhMdXZtlhvh6WBeesCNLjMQpogs",
+  "authDomain": "gramai-advisor.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-8f3ab799-2f1f-4dfc-ab46-28f6cbe2d1a6",
+  "storageBucket": "gramai-advisor.firebasestorage.app",
+  "messagingSenderId": "231604223102",
+  "measurementId": ""
+}

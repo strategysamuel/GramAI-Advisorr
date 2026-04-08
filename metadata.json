@@ -1,0 +1,5 @@
+{
+  "name": "GramAI Advisor",
+  "description": "A production-ready multi-agent AI system for farmers to optimize land usage, crop planning, and financial decisions.",
+  "requestFramePermissions": ["microphone"]
+}

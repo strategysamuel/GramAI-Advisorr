@@ -1,0 +1,125 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: farmers
+    // Document ID: {uid} (matches Firebase Auth UID)
+    // Fields:
+    //   - uid: string (required) - The unique identifier for the farmer.
+    //   - name: string (required) - The farmer's name.
+    //   - location: string (required) - The farmer's location.
+    //   - budget: number (required) - The farmer's budget.
+    //   - risk_appetite: string (optional) - low, medium, high.
+    //   - land_details: map (optional) - size_acres, soil_type, water_availability.
+    //
+    // Collection: plans
+    // Document ID: auto-generated
+    // Fields:
+    //   - farmer_uid: string (required) - UID of the owner farmer.
+    //   - timestamp: timestamp (required) - When the plan was created.
+    //   - total_income: number (required) - Projected income.
+    //   - allocation: list (optional) - List of crop allocations.
+    //   - revenue_timeline: list (optional) - Projected revenue over time.
+    //
+    // Collection: crops
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string - Crop name.
+    //   - yield_time_months: number - Time to harvest.
+    //
+    // Collection: schemes
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string - Scheme name.
+    //   - subsidy_amount: number - Amount of subsidy.
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (request.auth.token.email == "strategysamuel@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // Farmers Collection
+    match /farmers/{farmerId} {
+      function isValidFarmer(data) {
+        return hasOnlyAllowedFields(['uid', 'name', 'location', 'budget', 'risk_appetite', 'land_details', 'preferences', 'language', 'revenue_target', 'audio_instructions', 'updated_at']) &&
+               data.uid is string && data.uid.size() > 0 && data.uid.size() < 128 &&
+               data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+               data.location is string && data.location.size() > 0 && data.location.size() < 200 &&
+               data.budget is number && data.budget >= 0 &&
+               (!('language' in data) || (data.language is string && data.language.size() < 50)) &&
+               (!('risk_appetite' in data) || (data.risk_appetite in ['low', 'medium', 'high'])) &&
+               (!('land_details' in data) || (data.land_details is map)) &&
+               (!('preferences' in data) || (data.preferences is map)) &&
+               (!('revenue_target' in data) || (data.revenue_target is number)) &&
+               (!('audio_instructions' in data) || (data.audio_instructions is string)) &&
+               (!('updated_at' in data) || (data.updated_at is timestamp));
+      }
+
+      allow read: if isOwner(farmerId) || isAdmin();
+      allow create: if isOwner(farmerId) && isValidFarmer(request.resource.data);
+      allow update: if isOwner(farmerId) && isValidFarmer(request.resource.data) && 
+                      request.resource.data.uid == resource.data.uid;
+      allow delete: if isAdmin();
+    }
+
+    // Plans Collection
+    match /plans/{planId} {
+      function isValidPlan(data) {
+        return data.farmer_uid is string && 
+               (data.farmer_uid == request.auth.uid || isAdmin()) &&
+               (data.timestamp is string || data.timestamp is timestamp);
+      }
+
+      allow read: if isAuthenticated() && (resource.data.farmer_uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidPlan(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.farmer_uid == request.auth.uid || isAdmin()) && 
+                      isValidPlan(request.resource.data);
+      allow delete: if isAuthenticated() && (resource.data.farmer_uid == request.auth.uid || isAdmin());
+    }
+
+    // Reference Collections (Crops and Schemes) - Read-only for users, Admin can write
+    match /crops/{cropId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /schemes/{schemeId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

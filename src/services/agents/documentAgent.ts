@@ -1,0 +1,154 @@
+import { jsPDF } from "jspdf";
+import { FarmingPlan, FarmerProfile } from "../../types";
+
+export async function generateReport(plan: FarmingPlan, profile: FarmerProfile): Promise<string> {
+  const serviceUrl = import.meta.env.VITE_DOCUMENT_AGENT_URL;
+  if (serviceUrl && serviceUrl.startsWith('http')) {
+    try {
+      const cleanUrl = serviceUrl.replace(/\/$/, '');
+      const response = await fetch(`${cleanUrl}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, profile }),
+      });
+      if (response.ok) {
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+      }
+      console.warn(`Document service returned ${response.status}: ${response.statusText}`);
+    } catch (e) {
+      console.warn("Document service failed, falling back to local AI logic:", e);
+    }
+  }
+
+  const doc = new jsPDF();
+  
+  // Header
+  doc.setFillColor(16, 185, 129);
+  doc.rect(0, 0, 210, 40, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(24);
+  doc.text("BANK LOAN PROPOSAL", 105, 25, { align: "center" });
+  
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(12);
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, 160, 50);
+
+  // Section 1: Applicant Profile
+  doc.setFontSize(16);
+  doc.setTextColor(16, 185, 129);
+  doc.text("1. APPLICANT PROFILE", 20, 60);
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
+  doc.text(`Name: ${profile.name}`, 25, 70);
+  doc.text(`Location: ${profile.location}`, 25, 77);
+  doc.text(`Risk Appetite: ${profile.risk_appetite.toUpperCase()}`, 25, 84);
+  doc.text(`Total Budget: INR ${profile.budget.toLocaleString()}`, 25, 91);
+
+  // Section 2: Project Overview
+  doc.setFontSize(16);
+  doc.setTextColor(16, 185, 129);
+  doc.text("2. PROJECT OVERVIEW & ALLOCATION", 20, 105);
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
+  let y = 115;
+  plan.allocation.forEach((item) => {
+    doc.text(`- ${item.crop_name}: ${item.acres} Acres (Expected Rev: INR ${item.expected_revenue.toLocaleString()})`, 25, y);
+    y += 7;
+  });
+
+  // Section 3: Financial Projections
+  doc.setFontSize(16);
+  doc.setTextColor(16, 185, 129);
+  doc.text("3. FINANCIAL PROJECTIONS", 20, y + 10);
+  y += 20;
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
+  doc.text(`Total Estimated Investment: INR ${plan.total_investment.toLocaleString()}`, 25, y);
+  doc.text(`Total Expected Annual Income: INR ${plan.total_income.toLocaleString()}`, 25, y + 7);
+  doc.text(`Expected ROI: ${plan.roi.toFixed(2)}%`, 25, y + 14);
+  doc.text(`Requested Loan Amount: INR ${plan.loan_eligibility.toLocaleString()}`, 25, y + 21);
+
+  // Section 4: Government Support
+  doc.setFontSize(16);
+  doc.setTextColor(16, 185, 129);
+  doc.text("4. GOVERNMENT SUBSIDIES & SCHEMES", 20, y + 35);
+  y += 45;
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
+  plan.schemes.forEach((scheme) => {
+    doc.text(`- ${scheme.name}: INR ${scheme.subsidy_amount.toLocaleString()}`, 25, y);
+    y += 7;
+  });
+
+  // Section 5: 12-Month Strategy
+  if (plan.advisory_report) {
+    doc.addPage();
+    y = 20;
+    doc.setFontSize(16);
+    doc.setTextColor(16, 185, 129);
+    doc.text("5. 12-MONTH FARMING STRATEGY", 20, y);
+    y += 15;
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    plan.advisory_report.monthly_strategy.forEach((item) => {
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFont(undefined, 'bold');
+      doc.text(`Month ${item.month}: ${item.focus}`, 25, y);
+      doc.setFont(undefined, 'normal');
+      y += 5;
+      item.tasks.forEach(task => {
+        doc.text(`  • ${task}`, 30, y);
+        y += 5;
+      });
+      y += 5;
+    });
+
+    // Section 6: Advisory
+    doc.addPage();
+    y = 20;
+    doc.setFontSize(16);
+    doc.setTextColor(16, 185, 129);
+    doc.text("6. DETAILED ADVISORY", 20, y);
+    y += 15;
+    
+    doc.setFontSize(12);
+    doc.text("Soil Management", 25, y);
+    y += 7;
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    const soilLines = doc.splitTextToSize(plan.advisory_report.soil_management, 160);
+    doc.text(soilLines, 25, y);
+    y += (soilLines.length * 5) + 10;
+
+    doc.setFontSize(12);
+    doc.setTextColor(16, 185, 129);
+    doc.text("Pest Control", 25, y);
+    y += 7;
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    const pestLines = doc.splitTextToSize(plan.advisory_report.pest_control, 160);
+    doc.text(pestLines, 25, y);
+    y += (pestLines.length * 5) + 10;
+
+    doc.setFontSize(12);
+    doc.setTextColor(16, 185, 129);
+    doc.text("Market Linkage", 25, y);
+    y += 7;
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    const marketLines = doc.splitTextToSize(plan.advisory_report.market_linkage, 160);
+    doc.text(marketLines, 25, y);
+  }
+
+  // Footer
+  doc.setFontSize(10);
+  doc.setTextColor(150, 150, 150);
+  doc.text("Generated by GramAI Advisor - AI-Powered Farming Intelligence", 105, 285, { align: "center" });
+
+  const blob = doc.output("blob");
+  return URL.createObjectURL(blob);
+}

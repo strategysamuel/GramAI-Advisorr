@@ -37,18 +37,16 @@ It transforms simple inputs like **land sketches and soil reports** into:
 ## 🏗 Architecture
 
 User Input (Farmer Details + Land Sketch)
-↓
+          ↓
 🧠 Orchestrator Agent
-↓
-┌───────────────┬───────────────┬───────────────┐
-│ Crop Agent │ Land Agent │ Finance Agent │
-└───────────────┴───────────────┴───────────────┘
-↓
+          ↓
+Crop Agent │ Land Agent │ Finance Agent │
+          ↓
 🏛 Scheme Agent
-↓
+          ↓
 🛠 MCP Tool Layer
 (Tasks | Calendar | Notes)
-↓
+          ↓
 Final Farming Plan
 
 
@@ -107,6 +105,10 @@ Combines agriculture + finance + policy intelligence
 Converts land sketches into AI zoning maps
 Enables income-driven farming decisions
 Bridges gap between farmers and formal finance
+
+App URL - https://gramai-advisor-231604223102.us-west1.run.app
+Git Hub Repo - https://github.com/strategysamuel/GramAI-Advisorr
+
 👨‍💻 Author
 
 A Samuel Arun Kumar

@@ -73,9 +73,8 @@ Example:
 }
 
 🧪 Sample Inputs
-🗺️ Land Sketch
-
-🧪 Soil Report
+          🗺️ Land Sketch
+          🧪 Soil Report
 
 🚀 Demo Flow
 Enter farmer details
